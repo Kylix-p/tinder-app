@@ -1,8 +1,15 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { redirect } from "next/navigation";
-import { getUserByID, getUsersWithNoConnection } from "@/app/neo4j.action";
-import HomePageClientComponent from "../components/Home";
-export default async function Home() {
+import { getMatches } from "../neo4j.action";
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+} from "../../components/ui/card";
+import React from "react";
+
+export default async function MatchPage() {
 	const { isAuthenticated, getUser } = getKindeServerSession();
 	if (!(await isAuthenticated())) {
 		return redirect(
@@ -16,17 +23,20 @@ export default async function Home() {
 			"/api/auth/login?post_login_redirect_url=http://localhost:3000/callback",
 		);
 	}
+	const matches = await getMatches(user.id);
 
-	const usersWithNoConnection = await getUsersWithNoConnection(user.id);
-	const currentUser = await getUserByID(user.id);
 	return (
 		<main>
-			{currentUser && (
-				<HomePageClientComponent
-					currentUser={currentUser}
-					users={usersWithNoConnection}
-				/>
-			)}
+			{matches.map((user) => (
+				<Card key={user.applicationId}>
+					<CardHeader>
+						<CardTitle>
+							{user.firstName} {user.lastName}
+						</CardTitle>
+						<CardDescription>{user.email}</CardDescription>
+					</CardHeader>
+				</Card>
+			))}
 		</main>
 	);
 }
